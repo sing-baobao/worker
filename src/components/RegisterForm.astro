@@ -1,0 +1,64 @@
+---
+// src/components/RegisterForm.astro
+---
+
+<form id="register-form">
+  <div style="margin-bottom: 1rem;">
+    <label for="username" style="display: block; margin-bottom: 0.5rem;">Username</label>
+    <input type="text" id="username" name="username" required style="padding: 0.5rem; width: 100%; max-width: 300px;" />
+  </div>
+  
+  <div style="margin-bottom: 1rem;">
+    <label for="password" style="display: block; margin-bottom: 0.5rem;">Password</label>
+    <input type="password" id="password" name="password" required style="padding: 0.5rem; width: 100%; max-width: 300px;" />
+  </div>
+
+  <button type="submit" style="padding: 0.5rem 1rem; cursor: pointer;">Register</button>
+  
+  <p id="reg-status" style="margin-top: 1rem; display: none;"></p>
+</form>
+
+<script>
+  import { API_URL } from '../config.js';
+
+  const form = document.getElementById('register-form');
+  const statusMsg = document.getElementById('reg-status');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!statusMsg) return;
+
+    statusMsg.style.display = 'none';
+
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const username = formData.get('username');
+    const password = formData.get('password');
+
+    try {
+      const res = await fetch(`${API_URL}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Server returned error ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      statusMsg.style.color = 'green';
+      statusMsg.textContent = 'Account created! Redirecting to login...';
+      statusMsg.style.display = 'block';
+
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    } catch (err: any) {
+      statusMsg.style.color = 'red';
+      statusMsg.textContent = err.message;
+      statusMsg.style.display = 'block';
+    }
+  });
+</script>

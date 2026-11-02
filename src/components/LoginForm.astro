@@ -1,0 +1,50 @@
+<form id="login-form">
+  <div>
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" required />
+  </div>
+  <div>
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required />
+  </div>
+  <button type="submit">Log In</button>
+  <p id="error-message" style="color: red; display: none;"></p>
+</form>
+
+<script>
+  import { API_URL } from '../config.js';
+
+  const form = document.getElementById('login-form');
+  const errorMsg = document.getElementById('error-message');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+
+    const username = e.target.username.value;
+    const password = e.target.password.value;
+
+    try {
+      const res = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      // Store JWT in localStorage
+      localStorage.setItem('auth_token', data.token);
+
+      // Redirect to protected dashboard or home page
+      window.location.href = '/dashboard';
+    } catch (err) {
+      errorMsg.textContent = err.message;
+      errorMsg.style.display = 'block';
+    }
+  });
+</script>

@@ -50,7 +50,7 @@
 </style>
 
 <script>
-  const WORKER_URL = "https://beetlskillsapi.singbaobao.com";
+  import { API_URL } from '../config.js';
   const output = document.getElementById("output");
   const fetchBtn = document.getElementById("fetchBtn");
   let jwtToken = localStorage.getItem("jwt") || "";
@@ -73,7 +73,7 @@
     if (output) output.textContent = "Authenticating...";
 
     try {
-      const res = await fetch(`${WORKER_URL}/api/login`, {
+      const res = await fetch(`${API_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -98,7 +98,7 @@
     if (output) output.textContent = "Sending request with Bearer token...";
 
     try {
-      const res = await fetch(`${WORKER_URL}/api/protected`, {
+      const res = await fetch(`${API_URL}/api/protected`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${jwtToken}`
