@@ -2,6 +2,7 @@
 // src/pages/index.astro
 import Layout from '../layouts/Layout.astro';
 import LoginPage from '../components/LoginPage.astro';
+import RegisterForm from '../components/RegisterForm.astro';
 import DashboardPanel from '../components/DashboardPanel.astro';
 ---
 
@@ -15,6 +16,15 @@ import DashboardPanel from '../components/DashboardPanel.astro';
         <p style="color: #666;">Please sign in or register to continue.</p>
       </div>
       <LoginPage />
+    </div>
+
+    <!-- REGISTER SECTION (Hidden by default) -->
+    <div id="registerSection" style="display: none;">
+      <div style="text-align: center; margin-top: 40px;">
+        <h1>Create Account</h1>
+        <p style="color: #666;">Sign up for a new account.</p>
+      </div>
+      <RegisterForm />
     </div>
 
     <!-- DASHBOARD SECTION (Hidden by default) -->
@@ -37,14 +47,17 @@ import DashboardPanel from '../components/DashboardPanel.astro';
 
   // 2. Toggle view based on token existence
   const loginSection = document.getElementById("loginSection");
+  const registerSection = document.getElementById("registerSection");
   const dashboardSection = document.getElementById("dashboardSection");
   const token = localStorage.getItem("jwt");
 
   if (token) {
     if (loginSection) loginSection.style.display = "none";
+    if (registerSection) registerSection.style.display = "none";
     if (dashboardSection) dashboardSection.style.display = "block";
   } else {
     if (loginSection) loginSection.style.display = "block";
+    if (registerSection) registerSection.style.display = "none";
     if (dashboardSection) dashboardSection.style.display = "none";
   }
 </script>
