@@ -1,0 +1,23 @@
+---
+// src/pages/auth/verify.astro
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Email Verification">
+  <div style="max-width: 600px; margin: 80px auto; padding: 20px; text-align: center;">
+    <h2>Processing Verification...</h2>
+    <p style="color: #666;">Please wait while we verify your email address.</p>
+  </div>
+</Layout>
+
+<script>
+  // This page acts as a fallback or client-side handler if needed,
+  // though backend handleVerify redirects directly to /auth/success?token=... upon success.
+  const urlParams = new URLSearchParams(window.location.search);
+  const error = urlParams.get("error");
+
+  if (error) {
+    alert("Verification failed: " + error);
+    window.location.href = "/";
+  }
+</script>

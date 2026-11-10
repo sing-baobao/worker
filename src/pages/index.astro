@@ -36,40 +36,7 @@ import DashboardPanel from '../components/DashboardPanel.astro';
 </Layout>
 
 <script>
-  import { API_URL } from '../config.js';
-
-  // 1. Capture query parameters from redirects (Verification / OAuth)
-  const urlParams = new URLSearchParams(window.location.search);
-  const tokenParam = urlParams.get("token");
-  const emailParam = urlParams.get("email");
-  const actionParam = urlParams.get("action");
-
-  // Handle Email Verification Action
-  if (actionParam === "verify" && tokenParam && emailParam) {
-    window.history.replaceState({}, document.title, window.location.pathname);
-
-    fetch(`${API_URL}/api/auth/verify?token=${tokenParam}&email=${encodeURIComponent(emailParam)}`)
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok && data.token) {
-          // Store token and reload so the session starts immediately
-          localStorage.setItem("jwt", data.token);
-          window.location.href = "/";
-        } else {
-          alert("Verification failed: " + (data.error || "Invalid link."));
-        }
-      })
-      .catch((err) => {
-        alert("Verification network error: " + err.message);
-      });
-  } 
-  // Handle Standard OAuth Token Capture
-  else if (tokenParam && !actionParam) {
-    localStorage.setItem("jwt", tokenParam);
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-
-  // 2. Toggle view based on token existence
+  // Toggle view based purely on JWT token existence in localStorage
   const loginSection = document.getElementById("loginSection");
   const registerSection = document.getElementById("registerSection");
   const dashboardSection = document.getElementById("dashboardSection");

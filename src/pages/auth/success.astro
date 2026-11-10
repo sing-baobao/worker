@@ -1,0 +1,24 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Authenticating...">
+  <div style="text-align: center; margin-top: 100px;">
+    <h2>Verifying your session...</h2>
+    <p>Please wait while we log you in.</p>
+  </div>
+</Layout>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+
+  if (token) {
+    localStorage.setItem("jwt", token);
+    // Redirect cleanly to root SPA dashboard
+    window.location.href = "/";
+  } else {
+    alert("Authentication token missing.");
+    window.location.href = "/";
+  }
+</script>
