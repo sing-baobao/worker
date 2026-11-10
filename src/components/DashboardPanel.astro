@@ -1,5 +1,6 @@
 ---
 // src/components/DashboardPanel.astro
+import PongGame from './PongGame.astro';
 ---
 
 <div class="backend-tester">
@@ -15,6 +16,7 @@
     <p class="subtitle">You have successfully authenticated and your session is active.</p>
   </div>
 
+  <!--
   <div class="box">
     <h3>Protected Actions</h3>
     <p class="subtitle">Test token-protected endpoints:</p>
@@ -25,6 +27,11 @@
     <h3>API Response:</h3>
     <pre id="output"></pre>
   </div>
+  -->
+
+  <!-- Interactive Edge Pong Component -->
+  <PongGame />
+
 </div>
 
 <style>
@@ -205,3 +212,32 @@
     }
   });
 </script>
+
+<script>
+  const logoutBtn = document.getElementById('dashboardLogoutBtn');
+  logoutBtn?.addEventListener('click', () => {
+    localStorage.removeItem('jwt');
+    window.location.href = '/';
+  });
+</script>
+
+<style>
+  .dashboard-wrapper {
+    color: #f8fafc;
+  }
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .logout-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .logout-btn:hover { background: #dc2626; }
+</style>

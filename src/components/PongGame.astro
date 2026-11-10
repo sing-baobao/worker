@@ -1,0 +1,371 @@
+---
+// src/components/PongGame.astro
+---
+
+<div class="pong-card">
+  <div class="header-row">
+    <h3>Pinball</h3>
+    <div class="controls-group">
+      <button id="startPongBtn" class="action-btn">Start Match</button>
+    </div>
+  </div>
+
+  <div class="telemetry-grid">
+    <div class="metric-box">
+      <span class="label">Your Score</span>
+      <span id="playerScore" class="value">0</span>
+    </div>
+    <div class="metric-box">
+      <span class="label">AI Worker Score</span>
+      <span id="aiScore" class="value">0</span>
+    </div>
+    <div class="metric-box">
+      <span class="label">Current Rally</span>
+      <span id="rallyCount" class="value">0</span>
+    </div>
+    <div class="metric-box">
+      <span class="label">AI Tactic</span>
+      <span id="aiTactic" class="value">Neutral</span>
+    </div>
+  </div>
+
+  <!-- Pong Game Canvas -->
+  <div class="canvas-container">
+    <canvas id="pongCanvas" width="600" height="320"></canvas>
+    <div id="canvasOverlay" class="canvas-overlay">
+      Move mouse up/down to move the Blue bar.<br/>
+      Click 'Start Match'.
+    </div>
+  </div>
+</div>
+
+<script>
+  import { API_URL } from '../config.js';
+
+  const canvas = document.getElementById('pongCanvas') as HTMLCanvasElement;
+  const startBtn = document.getElementById('startPongBtn');
+  const overlay = document.getElementById('canvasOverlay');
+  const playerScoreEl = document.getElementById('playerScore');
+  const aiScoreEl = document.getElementById('aiScore');
+  const rallyCountEl = document.getElementById('rallyCount');
+  const aiTacticEl = document.getElementById('aiTactic');
+
+  if (canvas) {
+    const ctx = canvas.getContext('2d')!;
+
+    let gameRunning = false;
+    let pScore = 0;
+    let aScore = 0;
+    let currentRally = 0;
+    let maxRallyInMatch = 0;
+
+    let lastMouseY = 160;
+    let paddleVelocityY = 0;
+
+    // Fixed coordinates matching canvas width/height
+    const player = { x: 20, y: 125, width: 12, height: 75 };
+    const ai = { x: 568, y: 125, width: 12, height: 75, baseSpeed: 3.8 };
+    const ball = { x: 300, y: 160, radius: 7, speedX: 5, speedY: 0 };
+
+    type AITactic = 'Standard' | 'Corner Drive' | 'Soft Drop' | 'Aggressive Cut';
+    let currentAITactic: AITactic = 'Standard';
+    let aiTargetY = 160;
+
+    // Precise scaling for mouse interaction relative to canvas buffer size
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = canvas.height / rect.height;
+      const currentMouseY = (e.clientY - rect.top) * scaleY;
+
+      paddleVelocityY = currentMouseY - lastMouseY;
+      lastMouseY = currentMouseY;
+
+      player.y = currentMouseY - player.height / 2;
+      if (player.y < 0) player.y = 0;
+      if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
+    });
+
+    function selectAITactic() {
+      const roll = Math.random();
+      if (roll < 0.35) {
+        currentAITactic = 'Standard';
+        aiTargetY = Math.random() < 0.5 ? 60 : 260;
+      } else if (roll < 0.65) {
+        currentAITactic = 'Corner Drive';
+        aiTargetY = Math.random() < 0.5 ? 20 : 300;
+      } else if (roll < 0.85) {
+        currentAITactic = 'Soft Drop';
+        aiTargetY = 160 + (Math.random() - 0.5) * 40;
+      } else {
+        currentAITactic = 'Aggressive Cut';
+        aiTargetY = Math.random() < 0.5 ? 40 : 280;
+      }
+      if (aiTacticEl) aiTacticEl.textContent = currentAITactic;
+    }
+
+    function resetBall(servingPlayer: 'player' | 'ai') {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      const direction = servingPlayer === 'player' ? -1 : 1;
+      ball.speedX = direction * 5;
+      ball.speedY = (Math.random() - 0.5) * 4;
+      currentRally = 0;
+      if (rallyCountEl) rallyCountEl.textContent = '0';
+      selectAITactic();
+    }
+
+    async function syncMatchResults(result: 'win' | 'loss') {
+      try {
+        const token = localStorage.getItem('jwt');
+        await fetch(`${API_URL}/api/ping-pong/match`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            playerScore: pScore,
+            aiScore: aScore,
+            maxRally: maxRallyInMatch,
+            result
+          })
+        });
+      } catch (err) {
+        console.error('Match telemetry upload failed:', err);
+      }
+    }
+
+    function update() {
+      if (!gameRunning) return;
+
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
+
+      if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+        ball.speedY = -ball.speedY;
+      }
+
+      // AI Tracking
+      const aiCenter = ai.y + ai.height / 2;
+      const trackingSpeed = ai.baseSpeed + Math.min(2.5, currentRally * 0.15);
+      if (aiCenter < ball.y - 8) {
+        ai.y += trackingSpeed;
+      } else if (aiCenter > ball.y + 8) {
+        ai.y -= trackingSpeed;
+      }
+      if (ai.y < 0) ai.y = 0;
+      if (ai.y > canvas.height - ai.height) ai.y = canvas.height - ai.height;
+
+      // Player Paddle Collision
+      if (
+        ball.x - ball.radius <= player.x + player.width &&
+        ball.x + ball.radius >= player.x &&
+        ball.y >= player.y &&
+        ball.y <= player.y + player.height &&
+        ball.speedX < 0
+      ) {
+        currentRally++;
+        if (currentRally > maxRallyInMatch) maxRallyInMatch = currentRally;
+        if (rallyCountEl) rallyCountEl.textContent = String(currentRally);
+
+        const hitOffset = (ball.y - (player.y + player.height / 2)) / (player.height / 2);
+        let angleModifier = hitOffset * 3.5 + paddleVelocityY * 0.45;
+        
+        ball.speedY = Math.max(-8, Math.min(8, angleModifier));
+        ball.speedX = Math.abs(ball.speedX) * 1.04;
+        selectAITactic();
+      }
+
+      // AI Paddle Collision
+      if (
+        ball.x + ball.radius >= ai.x &&
+        ball.x - ball.radius <= ai.x + ai.width &&
+        ball.y >= ai.y &&
+        ball.y <= ai.y + ai.height &&
+        ball.speedX > 0
+      ) {
+        currentRally++;
+        if (currentRally > maxRallyInMatch) maxRallyInMatch = currentRally;
+        if (rallyCountEl) rallyCountEl.textContent = String(currentRally);
+
+        const targetDeltaY = aiTargetY - ball.y;
+        let aiReturnSpeedY = targetDeltaY * 0.04;
+
+        if (currentAITactic === 'Aggressive Cut') {
+          aiReturnSpeedY += (Math.random() > 0.5 ? 2.5 : -2.5);
+        } else if (currentAITactic === 'Soft Drop') {
+          aiReturnSpeedY *= 0.5;
+        }
+
+        ball.speedY = Math.max(-7.5, Math.min(7.5, aiReturnSpeedY));
+        ball.speedX = -Math.abs(ball.speedX) * 1.04;
+      }
+
+      // Scoring
+      if (ball.x < 0) {
+        aScore++;
+        if (aiScoreEl) aiScoreEl.textContent = String(aScore);
+        if (aScore >= 5) {
+          gameRunning = false;
+          if (overlay) {
+            overlay.style.display = 'block';
+            overlay.innerHTML = `Game Over - Worker AI Wins! (${pScore} - ${aScore})<br/>Max Rally: ${maxRallyInMatch}`;
+          }
+          syncMatchResults('loss');
+        } else {
+          resetBall('player');
+        }
+      } else if (ball.x > canvas.width) {
+        pScore++;
+        if (playerScoreEl) playerScoreEl.textContent = String(pScore);
+        if (pScore >= 5) {
+          gameRunning = false;
+          if (overlay) {
+            overlay.style.display = 'block';
+            overlay.innerHTML = `Victory! You Defeated the Edge AI! (${pScore} - ${aScore})<br/>Max Rally: ${maxRallyInMatch}`;
+          }
+          syncMatchResults('win');
+        } else {
+          resetBall('ai');
+        }
+      }
+    }
+
+    function draw() {
+      // Clear background
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Center Line
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Player Paddle (Blue)
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Draw AI Paddle (Purple)
+      ctx.fillStyle = '#a855f7';
+      ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
+
+      // Draw Ball (White)
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      if (gameRunning) {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // Initial render so paddles are visible even before clicking start
+    draw();
+
+    startBtn?.addEventListener('click', () => {
+      pScore = 0;
+      aScore = 0;
+      maxRallyInMatch = 0;
+      if (playerScoreEl) playerScoreEl.textContent = '0';
+      if (aiScoreEl) aiScoreEl.textContent = '0';
+      if (rallyCountEl) rallyCountEl.textContent = '0';
+      if (overlay) overlay.style.display = 'none';
+
+      resetBall('player');
+      gameRunning = true;
+      gameLoop();
+    });
+  }
+</script>
+
+<style>
+  .pong-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    color: #f8fafc;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+  }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .action-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .action-btn:hover { background: #2563eb; }
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .metric-box {
+    background: #0f172a;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #1e293b;
+  }
+  .label {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #38bdf8;
+  }
+  .canvas-container {
+    position: relative;
+    background: #0f172a;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    aspect-ratio: 600 / 320;
+    cursor: crosshair;
+  }
+  .canvas-overlay {
+    position: absolute;
+    background: rgba(15, 23, 42, 0.9);
+    color: #f8fafc;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    pointer-events: none;
+    border: 1px solid #334155;
+    text-align: center;
+    line-height: 1.5;
+  }
+</style>
