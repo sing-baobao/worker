@@ -36,11 +36,33 @@ import DashboardPanel from '../components/DashboardPanel.astro';
 </Layout>
 
 <script>
-  // 1. Capture OAuth token from redirect query parameters if present (e.g. ?token=...)
+  import { API_URL } from '../config.js';
+
+  // 1. Capture query parameters from redirects (Verification / OAuth)
   const urlParams = new URLSearchParams(window.location.search);
   const tokenParam = urlParams.get("token");
+  const emailParam = urlParams.get("email");
+  const actionParam = urlParams.get("action");
 
-  if (tokenParam) {
+  // Handle Email Verification Action
+  if (actionParam === "verify" && tokenParam && emailParam) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    fetch(`${API_URL}/api/auth/verify?token=${tokenParam}&email=${encodeURIComponent(emailParam)}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok) {
+          alert(data.message || "Email verified successfully! You can now log in.");
+        } else {
+          alert("Verification failed: " + (data.error || "Invalid link."));
+        }
+      })
+      .catch((err) => {
+        alert("Verification network error: " + err.message);
+      });
+  } 
+  // Handle Standard OAuth Token Capture
+  else if (tokenParam && !actionParam) {
     localStorage.setItem("jwt", tokenParam);
     window.history.replaceState({}, document.title, window.location.pathname);
   }
