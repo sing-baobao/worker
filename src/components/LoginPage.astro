@@ -145,21 +145,25 @@
     }
   });
 
-  // Handle click on the register link (passing typed email along)
-  document.getElementById("registerLink")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    const typedEmail = (document.getElementById("email") as HTMLInputElement)?.value || "";
-    window.location.href = `/register${typedEmail ? `?email=${encodeURIComponent(typedEmail)}` : ''}`;
-  });
-
+  // Handle click on the register link (SPA switch + optional pre-fill)
   document.getElementById("registerLink")?.addEventListener("click", (e) => {
     e.preventDefault();
     const typedEmail = (document.getElementById("email") as HTMLInputElement)?.value || "";
     
-    document.getElementById("loginSection")!.style.display = "none";
-    document.getElementById("registerSection")!.style.display = "block";
-  });
+    const loginSec = document.getElementById("loginSection");
+    const registerSec = document.getElementById("registerSection");
 
+    if (loginSec) loginSec.style.display = "none";
+    if (registerSec) registerSec.style.display = "block";
+
+    // Optional: pre-fill email in register form if element exists
+    if (typedEmail) {
+      const regEmailInput = document.getElementById("registerEmail") as HTMLInputElement;
+      if (regEmailInput) {
+        regEmailInput.value = typedEmail;
+      }
+    }
+  });
 
   // Handle Social OAuth Redirection triggers
   document.getElementById("githubOAuthBtn")?.addEventListener("click", () => {
