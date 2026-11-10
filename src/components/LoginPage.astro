@@ -1,0 +1,167 @@
+---
+// src/components/LoginPage.astro
+---
+
+<div class="backend-tester">
+  <div class="box">
+    <h3>Social OAuth</h3>
+    <p class="subtitle">Authenticate via your identity provider:</p>
+    <div class="oauth-buttons">
+      <button id="githubOAuthBtn" class="oauth-btn github" type="button">Login with GitHub</button>
+      <button id="googleOAuthBtn" class="oauth-btn google" type="button">Login with Google</button>
+      <button id="microsoftOAuthBtn" class="oauth-btn microsoft" type="button">Login with Microsoft</button>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>Or Direct Login</h3>
+    <p class="subtitle">Authenticate via your own email:</p>
+    <input type="text" id="email" placeholder="Enter email" value="" />
+    <input type="password" id="password" placeholder="Enter password" value="" />
+    <button id="loginBtn" type="button">Login</button>
+    
+    <!-- Registration helper -->
+    <div id="registerPrompt" class="register-prompt">
+      Don't have an account? <a href="#" id="registerLink">Click here to register</a>.
+    </div>
+
+    <!-- Error container (hidden by default) -->
+    <div id="loginErrorContainer" class="error-container hidden">
+      <span id="errorMessage"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .backend-tester {
+    margin-top: 20px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+  }
+  .box {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  input {
+    margin-right: 8px;
+    padding: 6px 10px;
+  }
+  button {
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .oauth-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .oauth-btn {
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .oauth-btn.github { background: #24292e; }
+  .oauth-btn.google { background: #4285f4; }
+  .oauth-btn.microsoft { background: #00a4ef; }
+
+  /* Registration Prompt & Error Styles */
+  .register-prompt {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  .register-prompt a {
+    color: #1a0dab;
+    text-decoration: underline;
+  }
+  .error-container {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #fdecea;
+    border: 1px solid #f5c6cb;
+    color: #990000;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  .error-container.hidden { 
+    display: none; 
+  }
+</style>
+
+<script>
+  import { API_URL } from '../config.js';
+
+  const loginErrorContainer = document.getElementById("loginErrorContainer");
+  const errorMessage = document.getElementById("errorMessage");
+
+  // Handle Standard Direct Login
+  document.getElementById("loginBtn")?.addEventListener("click", async () => {
+    const emailInput = document.getElementById("email") as HTMLInputElement;
+    const passwordInput = document.getElementById("password") as HTMLInputElement;
+    const email = emailInput?.value;
+    const password = passwordInput?.value;
+
+    if (loginErrorContainer) loginErrorContainer.classList.add("hidden");
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        // Save token and reload root so index.astro instantly mounts the dashboard
+        localStorage.setItem("jwt", data.token);
+        window.location.href = "/";
+      } else {
+        if (errorMessage && loginErrorContainer) {
+          let message = data.error || "Invalid credentials.";
+          if (message.toLowerCase().includes("oauth") || message.toLowerCase().includes("github") || message.toLowerCase().includes("social")) {
+            message = "This email uses social login. Please use the corresponding social login button above.";
+          }
+          errorMessage.textContent = message;
+          loginErrorContainer.classList.remove("hidden");
+        }
+      }
+    } catch (err: any) {
+      if (errorMessage && loginErrorContainer) {
+        errorMessage.textContent = `Network/CORS Error: ${err.message}`;
+        loginErrorContainer.classList.remove("hidden");
+      }
+    }
+  });
+
+  // Handle click on the register link (passing typed email along)
+  document.getElementById("registerLink")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const typedEmail = (document.getElementById("email") as HTMLInputElement)?.value || "";
+    window.location.href = `/register${typedEmail ? `?email=${encodeURIComponent(typedEmail)}` : ''}`;
+  });
+
+  // Handle Social OAuth Redirection triggers
+  document.getElementById("githubOAuthBtn")?.addEventListener("click", () => {
+    window.location.href = `${API_URL}/api/auth/github`;
+  });
+
+  document.getElementById("googleOAuthBtn")?.addEventListener("click", () => {
+    window.location.href = `${API_URL}/api/auth/google`;
+  });
+
+  document.getElementById("microsoftOAuthBtn")?.addEventListener("click", () => {
+    window.location.href = `${API_URL}/api/auth/microsoft`;
+  });
+</script>

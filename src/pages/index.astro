@@ -1,10 +1,50 @@
 ---
 // src/pages/index.astro
 import Layout from '../layouts/Layout.astro';
-import BackendTester from '../components/BackendTester.astro';
+import LoginPage from '../components/LoginPage.astro';
+import DashboardPanel from '../components/DashboardPanel.astro';
 ---
 
-<Layout title="Security Test Bench: Astro → Cloudflare Worker">
-  <h2>Test Bench: Astro &rarr; Cloudflare Worker</h2>
-  <BackendTester />
+<Layout title="Portal">
+  <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+    
+    <!-- LOGIN SECTION (Default static view) -->
+    <div id="loginSection">
+      <div style="text-align: center; margin-top: 40px;">
+        <h1>Welcome</h1>
+        <p style="color: #666;">Please sign in or register to continue.</p>
+      </div>
+      <LoginPage />
+    </div>
+
+    <!-- DASHBOARD SECTION (Hidden by default) -->
+    <div id="dashboardSection" style="display: none;">
+      <DashboardPanel />
+    </div>
+
+  </div>
 </Layout>
+
+<script>
+  // 1. Capture OAuth token from redirect query parameters if present (e.g. ?token=...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenParam = urlParams.get("token");
+
+  if (tokenParam) {
+    localStorage.setItem("jwt", tokenParam);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  // 2. Toggle view based on token existence
+  const loginSection = document.getElementById("loginSection");
+  const dashboardSection = document.getElementById("dashboardSection");
+  const token = localStorage.getItem("jwt");
+
+  if (token) {
+    if (loginSection) loginSection.style.display = "none";
+    if (dashboardSection) dashboardSection.style.display = "block";
+  } else {
+    if (loginSection) loginSection.style.display = "block";
+    if (dashboardSection) dashboardSection.style.display = "none";
+  }
+</script>
