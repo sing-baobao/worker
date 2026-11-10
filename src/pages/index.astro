@@ -51,8 +51,10 @@ import DashboardPanel from '../components/DashboardPanel.astro';
     fetch(`${API_URL}/api/auth/verify?token=${tokenParam}&email=${encodeURIComponent(emailParam)}`)
       .then(async (res) => {
         const data = await res.json();
-        if (res.ok) {
-          alert(data.message || "Email verified successfully! You can now log in.");
+        if (res.ok && data.token) {
+          // Store token and reload so the session starts immediately
+          localStorage.setItem("jwt", data.token);
+          window.location.href = "/";
         } else {
           alert("Verification failed: " + (data.error || "Invalid link."));
         }
