@@ -4,10 +4,12 @@ import PongGame from './PongGame.astro';
 ---
 
 <div class="backend-tester">
-  <!-- Status Box is now housed here inside the Dashboard -->
+  <!-- Status Box is housed here inside the Dashboard -->
   <div class="user-status">
-    <span class="status-dot"></span> 
-    <span>Connected as: <strong id="userEmailDisplay"></strong> <span id="authMethodDisplay" class="auth-badge"></span></span>
+    <div class="status-info">
+      <span class="status-dot"></span> 
+      <span class="status-text">Connected as: <strong id="userEmailDisplay"></strong> <span id="authMethodDisplay" class="auth-badge"></span></span>
+    </div>
     <button id="dashboardLogoutBtn" class="logout-btn" type="button">Logout</button>
   </div>
 
@@ -16,19 +18,6 @@ import PongGame from './PongGame.astro';
     <p class="subtitle">You have successfully authenticated and your session is active.</p>
   </div>
 
-  <!--
-  <div class="box">
-    <h3>Protected Actions</h3>
-    <p class="subtitle">Test token-protected endpoints:</p>
-    <button id="fetchProtectedBtn">Call Protected API</button>
-  </div>
-
-  <div>
-    <h3>API Response:</h3>
-    <pre id="output"></pre>
-  </div>
-  -->
-
   <!-- Interactive Edge Pong Component -->
   <PongGame />
 
@@ -36,56 +25,74 @@ import PongGame from './PongGame.astro';
 
 <style>
   .backend-tester {
+    box-sizing: border-box;
     margin-top: 20px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     max-width: 800px;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding: 20px;
+    padding: 10px;
   }
+
+  .backend-tester *, .backend-tester *::before, .backend-tester *::after {
+    box-sizing: border-box;
+  }
+
   .box {
     margin-bottom: 20px;
     padding: 15px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 6px;
+    background: #fff;
   }
+
   .subtitle {
     font-size: 0.9rem;
     color: #666;
     margin-top: 0;
     margin-bottom: 10px;
   }
-  button {
-    padding: 6px 12px;
-    cursor: pointer;
-    background: #1a73e8;
-    color: white;
-    border: none;
-    border-radius: 4px;
-  }
-  button:hover {
-    background: #1557b0;
-  }
-  /* User Status Banner styles */
+
+  /* User Status Banner styles - mobile friendly flex-wrap */
   .user-status {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
     align-items: center;
+    gap: 10px;
     background: #e6f4ea;
     border: 1px solid #ceead6;
     color: #137333;
-    padding: 10px 15px;
-    border-radius: 4px;
+    padding: 12px 15px;
+    border-radius: 6px;
     margin-bottom: 20px;
     font-size: 0.95rem;
+    word-break: break-all;
   }
+
+  .status-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
   .status-dot {
     height: 8px;
     width: 8px;
     background-color: #34a853;
     border-radius: 50%;
     display: inline-block;
-    margin-right: 8px;
+    flex-shrink: 0;
   }
+
+  .status-text {
+    overflow-wrap: anywhere;
+  }
+
   .auth-badge {
     display: inline-block;
     background: #d4edda;
@@ -94,23 +101,27 @@ import PongGame from './PongGame.astro';
     padding: 1px 6px;
     font-size: 0.8rem;
     border-radius: 4px;
-    margin-left: 6px;
     text-transform: capitalize;
     font-weight: 600;
   }
+
   .logout-btn {
-    margin-left: auto;
     background: #c5221f;
     color: white;
     border: none;
-    border-radius: 3px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
     cursor: pointer;
+    font-weight: 500;
+    flex-shrink: 0;
+    min-height: 36px;
   }
+
   .logout-btn:hover {
     background: #a51d1a;
   }
+
   #output {
     background: #f4f4f4;
     padding: 12px;
@@ -146,7 +157,7 @@ import PongGame from './PongGame.astro';
   }
 
   function initDashboard() {
-    // 1. Capture token if it's sitting in the URL query params (GitHub OAuth redirect)
+    // 1. Capture token if it's sitting in the URL query params (OAuth redirect)
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get("token");
 
@@ -171,7 +182,6 @@ import PongGame from './PongGame.astro';
         if (emailEl) emailEl.textContent = email;
         if (providerEl) providerEl.textContent = `via ${provider}`;
       } else {
-        // Clear out invalid token automatically
         localStorage.removeItem("jwt");
       }
     }
@@ -184,60 +194,9 @@ import PongGame from './PongGame.astro';
     initDashboard();
   }
 
-  // Handle Logout button inside dashboard
+  // Handle Logout button click inside dashboard
   document.getElementById("dashboardLogoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("jwt");
     window.location.href = "/";
   });
-
-  // Handle Protected API Test Call
-  document.getElementById("fetchProtectedBtn")?.addEventListener("click", async () => {
-    const output = document.getElementById("output");
-    const jwtToken = localStorage.getItem("jwt") || "";
-    if (output) output.textContent = "Calling protected endpoint...";
-
-    try {
-      const res = await fetch(`${API_URL}/api/protected`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${jwtToken}`
-        }
-      });
-      const data = await res.json();
-      if (output) {
-        output.textContent = `Status: ${res.status}\nResponse: ${JSON.stringify(data, null, 2)}`;
-      }
-    } catch (err) {
-      if (output) output.textContent = `Request Error: ${err.message}`;
-    }
-  });
 </script>
-
-<script>
-  const logoutBtn = document.getElementById('dashboardLogoutBtn');
-  logoutBtn?.addEventListener('click', () => {
-    localStorage.removeItem('jwt');
-    window.location.href = '/';
-  });
-</script>
-
-<style>
-  .dashboard-wrapper {
-    color: #f8fafc;
-  }
-  .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-  }
-  .logout-btn {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .logout-btn:hover { background: #dc2626; }
-</style>
