@@ -7,22 +7,22 @@ import DashboardPanel from '../components/DashboardPanel.astro';
 ---
 
 <Layout title="Portal">
-  <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+  <div class="portal-container">
     
     <!-- LOGIN SECTION (Default static view) -->
     <div id="loginSection">
-      <div style="text-align: center; margin-top: 40px;">
+      <div class="header-block">
         <h1>Welcome</h1>
-        <p style="color: #666;">Please sign in or register to continue.</p>
+        <p class="subtitle">Please sign in or register to continue.</p>
       </div>
       <LoginPage />
     </div>
 
     <!-- REGISTER SECTION (Hidden by default) -->
     <div id="registerSection" style="display: none;">
-      <div style="text-align: center; margin-top: 40px;">
+      <div class="header-block">
         <h1>Create Account</h1>
-        <p style="color: #666;">Sign up for a new account.</p>
+        <p class="subtitle">Sign up for a new account.</p>
       </div>
       <RegisterForm />
     </div>
@@ -34,6 +34,38 @@ import DashboardPanel from '../components/DashboardPanel.astro';
 
   </div>
 </Layout>
+
+<style>
+  /* Responsive mobile container styling */
+  .portal-container {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+
+  .portal-container *, .portal-container *::before, .portal-container *::after {
+    box-sizing: border-box;
+  }
+
+  .header-block {
+    text-align: center;
+    margin-top: 20px;
+    padding: 0 10px;
+  }
+
+  .header-block h1 {
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: #666;
+    margin: 0;
+  }
+</style>
 
 <script>
   // Toggle view based purely on JWT token existence in localStorage
