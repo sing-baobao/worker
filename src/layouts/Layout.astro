@@ -7,7 +7,7 @@ interface Props {
 const { title = "Cloudflare Worker + JWT + CORS Test" } = Astro.props;
 ---
 
-<!xhtml>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -15,18 +15,37 @@ const { title = "Cloudflare Worker + JWT + CORS Test" } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
-    <main>
+    <main class="main-wrapper">
       <slot />
     </main>
   </body>
 </html>
 
 <style is:global>
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   body {
     font-family: system-ui, -apple-system, sans-serif;
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 20px;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
     color: #333;
+    min-height: 100vh;
+  }
+
+  .main-wrapper {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 12px;
+  }
+
+  @media (min-width: 600px) {
+    .main-wrapper {
+      padding: 24px;
+      margin-top: 20px;
+    }
   }
 </style>
