@@ -4,17 +4,18 @@
 
 <div class="backend-tester">
   <div class="box">
-    <h3>Social OAuth</h3>
+    <h3>Single sign-on</h3>
     <p class="subtitle">Authenticate via your identity provider:</p>
     <div class="oauth-buttons">
       <button id="githubOAuthBtn" class="oauth-btn github" type="button">Login with GitHub</button>
       <button id="googleOAuthBtn" class="oauth-btn google" type="button">Login with Google</button>
       <button id="microsoftOAuthBtn" class="oauth-btn microsoft" type="button">Login with Microsoft</button>
+      <button id="intranetOAuthBtn" class="oauth-btn intranet" type="button">Login to Intranet</button>
     </div>
   </div>
 
   <div class="box">
-    <h3>Or Direct Login</h3>
+    <h3>Or sign in with email</h3>
     <p class="subtitle">Authenticate via your own email:</p>
     <div class="form-group">
       <input type="text" id="email" placeholder="Enter email" value="" />
@@ -22,9 +23,14 @@
       <button id="loginBtn" type="button">Login</button>
     </div>
     
-    <!-- Registration helper -->
-    <div id="registerPrompt" class="register-prompt">
-      Don't have an account? <a href="#" id="registerLink">Click here to register</a>.
+    <!-- Helpers row (Registration & Forgot Password) -->
+    <div class="auth-helpers">
+      <div id="registerPrompt" class="register-prompt">
+        Don't have an account? <a href="#" id="registerLink">Click here to register</a>.
+      </div>
+      <div id="forgotPasswordPrompt" class="forgot-prompt">
+        <a href="#" id="forgotPasswordLink">Forgot your password?</a>
+      </div>
     </div>
 
     <!-- Error container (hidden by default) -->
@@ -91,6 +97,7 @@
   .oauth-btn.github { background: #24292e; }
   .oauth-btn.google { background: #4285f4; }
   .oauth-btn.microsoft { background: #00a4ef; }
+  .oauth-btn.intranet { background: #0487c3d5; }
 
   /* Direct Login Form Group */
   .form-group {
@@ -154,14 +161,19 @@
     }
   }
 
-  /* Registration Prompt & Error Styles */
-  .register-prompt {
+  /* Auth Helpers Layout (Register & Forgot Password) */
+  .auth-helpers {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 14px;
     font-size: 0.9rem;
     color: #555;
+    flex-wrap: wrap;
+    gap: 10px;
   }
-  
-  .register-prompt a {
+
+  .register-prompt a, .forgot-prompt a {
     color: #1a0dab;
     text-decoration: underline;
   }
@@ -246,6 +258,28 @@
     }
   });
 
+  // Handle click on the forgot password link
+  document.getElementById("forgotPasswordLink")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const typedEmail = (document.getElementById("email") as HTMLInputElement)?.value || "";
+    
+    // Wire up your password reset view transition or modal trigger here
+    const forgotSec = document.getElementById("forgotPasswordSection");
+    const loginSec = document.getElementById("loginSection");
+
+    if (loginSec) loginSec.style.display = "none";
+    if (forgotSec) {
+      forgotSec.style.display = "block";
+      const forgotEmailInput = document.getElementById("forgotEmail") as HTMLInputElement;
+      if (forgotEmailInput && typedEmail) {
+        forgotEmailInput.value = typedEmail;
+      }
+    } else {
+      // Fallback if a separate section isn't set up yet
+      alert("Password reset flow can be linked here.");
+    }
+  });
+
   // Handle Social OAuth Redirection triggers
   document.getElementById("githubOAuthBtn")?.addEventListener("click", () => {
     window.location.href = `${API_URL}/api/auth/github`;
@@ -256,6 +290,10 @@
   });
 
   document.getElementById("microsoftOAuthBtn")?.addEventListener("click", () => {
-    window.location.href = `${API_URL}/api/auth/microsoft`;
+    window.location.href = `${API_URL}/api/auth/microsoft?tenant=common`;
   });
+
+  document.getElementById("intranetOAuthBtn")?.addEventListener("click", () => {
+    window.location.href = `${API_URL}/api/auth/microsoft?tenant=custom`;
+  });  
 </script>

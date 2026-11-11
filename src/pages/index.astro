@@ -3,14 +3,20 @@
 import Layout from '../layouts/Layout.astro';
 import LoginPage from '../components/LoginPage.astro';
 import RegisterForm from '../components/RegisterForm.astro';
+import ForgotPasswordForm from '../components/ForgotPasswordForm.astro';
+import ResetPasswordForm from '../components/ResetPasswordForm.astro';
 import DashboardPanel from '../components/DashboardPanel.astro';
+
+// Check if user is on the reset-password URL route with token parameters
+const url = Astro.url;
+const isResetPasswordRoute = url.pathname === '/auth/reset-password' || url.searchParams.has('token');
 ---
 
 <Layout title="Portal">
   <div class="portal-container">
     
     <!-- LOGIN SECTION (Default static view) -->
-    <div id="loginSection">
+    <div id="loginSection" style="display: none;">
       <div class="header-block">
         <h1>Welcome</h1>
         <p class="subtitle">Please sign in or register to continue.</p>
@@ -25,6 +31,24 @@ import DashboardPanel from '../components/DashboardPanel.astro';
         <p class="subtitle">Sign up for a new account.</p>
       </div>
       <RegisterForm />
+    </div>
+
+    <!-- FORGET PASSWORD SECTION (Hidden by default) -->
+    <div id="forgotPasswordSection" style="display: none;">
+      <div class="header-block">
+        <h1>Forgot Password</h1>
+        <p class="subtitle">Enter your email to receive a reset link.</p>
+      </div>
+      <ForgotPasswordForm />
+    </div>
+
+    <!-- RESET PASSWORD FORM SECTION (Triggered by email token link) -->
+    <div id="resetPasswordSection" style={isResetPasswordRoute ? "display: block;" : "display: none;"}>
+      <div class="header-block">
+        <h1>Reset Password</h1>
+        <p class="subtitle">Enter your new secure password.</p>
+      </div>
+      <ResetPasswordForm />
     </div>
 
     <!-- DASHBOARD SECTION (Hidden by default) -->
@@ -68,19 +92,34 @@ import DashboardPanel from '../components/DashboardPanel.astro';
 </style>
 
 <script>
-  // Toggle view based purely on JWT token existence in localStorage
+  // Toggle view based on JWT token or active URL path
   const loginSection = document.getElementById("loginSection");
   const registerSection = document.getElementById("registerSection");
+  const forgotPasswordSection = document.getElementById("forgotPasswordSection");
+  const resetPasswordSection = document.getElementById("resetPasswordSection");
   const dashboardSection = document.getElementById("dashboardSection");
+  
   const token = localStorage.getItem("jwt");
+  const isResetting = window.location.pathname.includes("reset-password") || new URLSearchParams(window.location.search).has("token");
 
   if (token) {
     if (loginSection) loginSection.style.display = "none";
     if (registerSection) registerSection.style.display = "none";
+    if (forgotPasswordSection) forgotPasswordSection.style.display = "none";
+    if (resetPasswordSection) resetPasswordSection.style.display = "none";
     if (dashboardSection) dashboardSection.style.display = "block";
+  } else if (isResetting) {
+    if (loginSection) loginSection.style.display = "none";
+    if (registerSection) registerSection.style.display = "none";
+    if (forgotPasswordSection) forgotPasswordSection.style.display = "none";
+    if (resetPasswordSection) resetPasswordSection.style.display = "block";
+    if (dashboardSection) dashboardSection.style.display = "none";
   } else {
+    // Default logged-out view: show Login, hide others
     if (loginSection) loginSection.style.display = "block";
     if (registerSection) registerSection.style.display = "none";
+    if (forgotPasswordSection) forgotPasswordSection.style.display = "none";
+    if (resetPasswordSection) resetPasswordSection.style.display = "none";
     if (dashboardSection) dashboardSection.style.display = "none";
   }
 </script>
